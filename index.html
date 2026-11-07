@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9480f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="투덜이">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>투덜이 연구소</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <h1>투덜이 연구소 <small>투덜투덜투덜투덜</small></h1>
+    <nav id="tabs" role="tablist">
+      <button data-view="list" class="on">쏟아내기</button>
+      <button data-view="tidy">불만광산</button>
+      <button data-view="ideas">에너지 발전소</button>
+      <button data-view="ai">또 너냐 <span id="aiBadge" class="badge-dot" hidden></span></button>
+    </nav>
+    <button id="openSettings" class="ghost" aria-label="설정">⚙ 설정</button>
+  </div>
+</header>
+
+<main>
+  <!-- 기록 -->
+  <section id="view-list" class="view">
+    <form id="captureForm" class="capture" autocomplete="off">
+      <textarea id="fText" rows="2" placeholder="지금 뭐가 불편했나요? 한 줄이면 충분해요. (Ctrl+Enter 저장)" required></textarea>
+      <div class="catbox" id="catbox" role="radiogroup" aria-label="카테고리"></div>
+      <div class="row">
+        <div class="intensity" id="intensity" role="radiogroup" aria-label="감정 강도"></div>
+        <div class="tagbox" id="tagbox">
+          <span id="tagChips"></span>
+          <input id="fTag" list="tagList" placeholder="태그 (Enter)">
+          <datalist id="tagList"></datalist>
+        </div>
+      </div>
+      <details class="more">
+        <summary>상황 메모 (선택)</summary>
+        <input id="fSituation" placeholder="언제, 어디서, 무엇을 하다가?">
+      </details>
+      <div class="row end">
+        <span class="hint" id="capHint"></span>
+        <button type="submit" class="primary">털어놓기</button>
+      </div>
+    </form>
+
+    <div class="sec-head">
+      <h2>🔥 불만 창고 TOP 3</h2>
+      <p class="muted small">카테고리를 고르면 그 안에서 가장 자주 반복된 불만 3가지만 보여줘요.</p>
+    </div>
+    <div class="catbox" id="topCats" role="tablist" aria-label="카테고리 선택"></div>
+    <div id="list"></div>
+  </section>
+
+  <!-- 정리하기 -->
+  <section id="view-tidy" class="view" hidden>
+    <div class="sec-head">
+      <h2>📋 쌓은 광물 <span id="recCount" class="muted small"></span></h2>
+      <p class="muted small">지금까지 쌓인 모든 불만이 최신순으로 보여요. (앞의 번호는 입력한 순번이에요) 여러 개를 체크해서 직접 합칠 수도 있어요.</p>
+    </div>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="검색">
+      <select id="catFilter"><option value="">모든 카테고리</option></select>
+      <select id="tagFilter"><option value="">모든 태그</option></select>
+    </div>
+    <div id="selBar" class="selbar" hidden>
+      <span id="selCount"></span>
+      <button id="selMerge" class="primary small">선택한 기록 한 통에!</button>
+      <button id="selClear" class="ghost small">선택 해제</button>
+    </div>
+    <div id="recList"></div>
+  </section>
+
+  <!-- AI -->
+  <section id="view-ai" class="view" hidden>
+    <div class="tidy-head">
+      <div>
+        <h2>✨ AI로 묶기</h2>
+        <p class="muted">AI가 같은 문제로 보이는 불만을 찾아 알려줘요. 내용을 확인하고 “묶기”를 눌러야 실제로 합쳐져요. 원본은 지워지지 않고 언제든 분리할 수 있어요.</p>
+      </div>
+      <button id="aiScan" class="ghost">✨ AI로 묶기</button>
+    </div>
+    <div id="aiList"></div>
+  </section>
+
+  <!-- 아이디어 메모 -->
+  <section id="view-ideas" class="view" hidden>
+    <div class="sec-head">
+      <h2>💡 광물 태우기</h2>
+      <p class="muted small">광물 태우기 칸에 적은 내용을 모아 봤어요. 횟수×강도가 높은 순서예요.</p>
+    </div>
+    <div id="ideaList"></div>
+  </section>
+</main>
+
+<dialog id="sugDlg"></dialog>
+<dialog id="linkDlg"></dialog>
+<dialog id="grpDlg"></dialog>
+
+<dialog id="setDlg">
+  <form method="dialog" class="settings">
+    <h2>설정</h2>
+    <label>유사도 기준
+      <select id="setTh">
+        <option value="strict">엄격 (확실히 비슷할 때만)</option>
+        <option value="normal">보통</option>
+        <option value="loose">느슨 (많이 제안)</option>
+      </select>
+    </label>
+    <label>카테고리 목록 (쉼표로 구분)
+      <input id="setCats" placeholder="일상, 업무, 앱/서비스, ...">
+    </label>
+    <fieldset>
+      <legend>AI 유사 판단 (선택)</legend>
+      <label class="check"><input type="checkbox" id="setAi"> 저장할 때 AI로도 비슷한 기록 찾기</label>
+      <label>Anthropic API 키
+        <input id="setKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+      </label>
+      <p class="muted small">키는 이 브라우저에만 저장되며, 기록 제목/내용이 Anthropic API로 전송됩니다. 끄면 전송되지 않습니다.</p>
+    </fieldset>
+    <fieldset>
+      <legend>데이터</legend>
+      <div class="btns">
+        <button type="button" id="exJson">JSON 내보내기</button>
+        <button type="button" id="exCsv">CSV 내보내기</button>
+        <button type="button" id="imJson">JSON 가져오기</button>
+        <button type="button" id="sample">샘플 데이터 넣기</button>
+        <button type="button" id="wipe" class="danger">전체 삭제</button>
+      </div>
+      <input type="file" id="imFile" accept="application/json" hidden>
+    </fieldset>
+    <div class="row end"><button class="primary" value="close">닫기</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="sim.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
